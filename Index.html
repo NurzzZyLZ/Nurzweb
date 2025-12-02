@@ -1,106 +1,712 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Website Saya</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f4f4f4;
-    }
-
-    header {
-      background: #007bff;
-      color: white;
-      padding: 20px;
-      text-align: center;
-    }
-
-    nav {
-      background: #333;
-      padding: 10px;
-      text-align: center;
-    }
-
-    nav a {
-      color: white;
-      margin: 0 15px;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    main {
-      padding: 20px;
-    }
-
-    footer {
-      background: #222;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-    }
-
-    section {
-      margin-bottom: 40px;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Aplikasi Menggambar (Android-ready)</title>
+<style>
+  :root{
+    --bg:#111;
+    --panel:#0f1720;
+    --accent:#3b82f6;
+    --muted:#9ca3af;
+    --light:#e6eef8;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans",sans-serif;background:var(--bg);color:var(--light);}
+  .app{display:flex;flex-direction:column;height:100vh;gap:6px;padding:6px;box-sizing:border-box;}
+  .topbar{display:flex;align-items:center;gap:8px;}
+  .toolbar{display:flex;gap:6px;flex-wrap:wrap;background:var(--panel);padding:8px;border-radius:8px;}
+  .toolbar button, .toolbar select, .toolbar input[type="color"]{
+    background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--light);padding:6px;border-radius:6px;
+  }
+  .toolbar input[type="range"]{width:110px;}
+  .main{flex:1;display:flex;gap:8px;align-items:stretch;overflow:hidden;}
+  .canvas-wrap{position:relative;flex:1;border-radius:8px;overflow:hidden;background:linear-gradient(180deg,#111 0%,#0b1220 100%);display:flex;align-items:center;justify-content:center;}
+  .canvas-area{position:relative;width:100%;height:100%;}
+  .layer-canvas{position:absolute;left:0;top:0;touch-action:none;}
+  .side{width:220px;display:flex;flex-direction:column;gap:8px;}
+  .panel{background:var(--panel);padding:10px;border-radius:8px;overflow:auto;max-height:60vh;}
+  .layers-list{display:flex;flex-direction:column;gap:6px;}
+  .layer-item{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px;border-radius:6px;background:rgba(255,255,255,0.02);}
+  .layer-name{flex:1;color:var(--light);font-size:14px;}
+  .small{font-size:13px;color:var(--muted);}
+  .btn{background:var(--accent);border:none;padding:8px 10px;border-radius:6px;color:#fff;}
+  .icon-btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px;border-radius:6px;color:var(--light);}
+  .bottombar{display:flex;gap:8px;align-items:center;justify-content:space-between;}
+  input[type=file]{display:none;}
+  /* selection overlay */
+  .selection-ghost{position:absolute;border:1px dashed #fff;pointer-events:none;}
+  @media (max-width:900px){
+    .side{width:150px}
+    .toolbar input[type="range"]{width:80px;}
+  }
+</style>
 </head>
 <body>
+<div class="app">
+  <div class="topbar">
+    <div class="toolbar" id="toolbar">
+      <button data-tool="brush" class="icon-btn">Brush</button>
+      <button data-tool="eraser" class="icon-btn">Eraser</button>
+      <button data-tool="line" class="icon-btn">Line</button>
+      <button data-tool="rect" class="icon-btn">Rect</button>
+      <button data-tool="ellipse" class="icon-btn">Ellipse</button>
+      <button data-tool="fill" class="icon-btn">Fill</button>
+      <button data-tool="text" class="icon-btn">Text</button>
+      <button data-tool="select" class="icon-btn">Select</button>
+      <button data-tool="move" class="icon-btn">Move</button>
+      <button data-tool="eyedrop" class="icon-btn">Eyedrop</button>
+      <button data-tool="stamp" class="icon-btn">Stamp</button>
+      <label class="small">Warna <input type="color" id="color" value="#ff6b6b"></label>
+      <label class="small">Ukuran <input id="size" type="range" min="1" max="120" value="8"></label>
+      <label class="small">Opacity <input id="opacity" type="range" min="0" max="100" value="100"></label>
+      <button id="undo" class="icon-btn" title="Undo">⟲</button>
+      <button id="redo" class="icon-btn" title="Redo">⟲</button>
+    </div>
+  </div>
 
-  <header>
-    <h1>Selamat Datang di Website Saya</h1>
-    <p>Ini adalah website buatan sendiri!</p>
-  </header>
+  <div class="main">
+    <div class="canvas-wrap" id="canvasWrap">
+      <div class="canvas-area" id="canvasArea"></div>
+    </div>
 
-  <nav>
-    <a href="#tentang">Tentang Saya</a>
-    <a href="#projek">Projek</a>
-    <a href="#kontak">Kontak</a>
-  </nav>
+    <div class="side">
+      <div class="panel">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+          <button id="addLayer" class="btn">Tambah Layer</button>
+          <button id="mergeDown" class="icon-btn">Merge↓</button>
+        </div>
+        <div class="layers-list" id="layers"></div>
+      </div>
 
-  <main>
-    <section id="tentang">
-      <h2>Tentang Saya</h2>
-      <p>Halo! Nama saya ilham. Saya sedang belajar membuat website menggunakan HTML dan CSS.</p>
-    </section>
+      <div class="panel">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <label class="small">Upload gambar / stiker</label>
+          <input type="file" id="imgUpload" accept="image/*">
+          <label class="small">Import background / foto</label>
+          <input type="file" id="bgUpload" accept="image/*">
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <button id="save" class="btn">Save PNG</button>
+            <button id="exportLayers" class="icon-btn">Unduh Layer</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <button id="clearLayer" class="icon-btn">Clear Layer</button>
+            <button id="clearAll" class="icon-btn">Clear All</button>
+          </div>
+        </div>
+      </div>
 
-    <section id="projek">
-      <h2>Projek Saya</h2>
-      <ul>
-        <li>rahasia...</li>
-        <li>Game Sederhana</li>
-      </ul>
-    </section>
+      <div class="panel">
+        <div class="small">Tips:</div>
+        <ul class="small" style="padding-left:16px;margin:6px 0;">
+          <li>Gunakan layer untuk memisahkan sketch, lineart, warna.</li>
+          <li>Tekan tool Text lalu klik kanvas untuk menambah teks.</li>
+          <li>Upload stiker lalu pilih tool Stamp untuk menempel beberapa kali.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-    <section id="kontak">
-      <h2>Kontak</h2>
-      <p>telp: 0877-****-****</p>
-    </section>
-  </main>
+  <div class="bottombar">
+    <div class="small">Canvas responsive — pinch/drag untuk navigasi browser, gunakan dua jari untuk zoom browser jika perlu.</div>
+    <div class="small">Created — local single-file. Untuk performa tinggi: gunakan WebGL canvas atau worker.</div>
+  </div>
+</div>
 
-  <footer>
-    &copy; 2025 Website inspirasi dari zeta:D. All rights reserved.
-  </footer>
+<!-- Hidden helper -->
+<canvas id="mergeCanvas" style="display:none"></canvas>
 
-</body>
-</html>
-<<img src="https://i.pinimg.com/474x/ed/69/df/ed69df05cbff7af8b28f406872c2007b.jpg" alt="udh" width="300"><!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Website Saya</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f4f4f4;
+<script>
+/*
+  Simple but feature-rich drawing web app for Android.
+  - Uses multiple stacked canvas elements as layers
+  - Pointer events for mouse/touch/stylus
+  - Undo/Redo stores merged snapshots (dataURL) with a maxHistory
+  - Flood fill, text input, selection (rect), move selection, stamp upload
+  - Layer controls: add, delete, duplicate, opacity, hide, merge down
+*/
+
+// ---------- Helpers ----------
+const $ = q => document.querySelector(q);
+const $$ = q => document.querySelectorAll(q);
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function downloadURI(uri, name){
+  const a = document.createElement('a');
+  a.href = uri; a.download = name || 'image.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function makeCanvas(w,h){
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h; c.className='layer-canvas';
+  c.style.width='100%'; c.style.height='100%';
+  c.dataset.opacity = 1;
+  return c;
+}
+
+// ---------- App State ----------
+const canvasArea = $('#canvasArea');
+const canvasWrap = $('#canvasWrap');
+const mergeCanvas = $('#mergeCanvas');
+let width = Math.max(800, Math.round(window.innerWidth*0.9));
+let height = Math.max(600, Math.round(window.innerHeight*0.72));
+let layers = []; // {id, canvas, ctx, name, visible, opacity, locked}
+let activeLayer = null;
+let tool = 'brush';
+let color = '#ff6b6b';
+let size = 8;
+let opacity = 1;
+let isDrawing=false;
+let startPoint = null;
+let lastPoint = null;
+let selection = null; // {x,y,w,h,imageData,ghost}
+let stampImage = null;
+
+// Undo/Redo (store merged snapshots)
+let history = [];
+let historyIndex = -1;
+const maxHistory = 40;
+
+function ensureSize(){
+  // adjust logical size
+  width = Math.max(800, Math.round(window.innerWidth*0.9));
+  height = Math.max(600, Math.round(window.innerHeight*0.72));
+  canvasArea.style.width = '100%';
+  canvasArea.style.height = '100%';
+  // update canvas DOM element sizes (pixel size)
+  layers.forEach(l=>{
+    const c = l.canvas;
+    // preserve content: draw to temp and resize
+    const tmp = document.createElement('canvas'); tmp.width = c.width; tmp.height = c.height;
+    tmp.getContext('2d').drawImage(c,0,0);
+    c.width = width; c.height = height;
+    c.getContext('2d').drawImage(tmp,0,0);
+  });
+  mergeCanvas.width = width; mergeCanvas.height = height;
+}
+
+// ---------- Layer System ----------
+function createLayer(name='Layer'){
+  const c = makeCanvas(width,height);
+  c.style.zIndex = layers.length;
+  canvasArea.appendChild(c);
+  const ctx = c.getContext('2d',{willReadFrequently:true});
+  const id = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const layer = {id, canvas:c, ctx, name: name+' '+(layers.length+1), visible:true, opacity:1, locked:false};
+  layers.push(layer);
+  setActiveLayer(layer.id);
+  renderLayersPanel();
+  pushHistory();
+  return layer;
+}
+
+function removeLayer(id){
+  const i = layers.findIndex(l=>l.id===id);
+  if(i>=0){
+    canvasArea.removeChild(layers[i].canvas);
+    layers.splice(i,1);
+    if(layers.length===0) createLayer('Layer');
+    setActiveLayer(layers[Math.max(0,i-1)].id);
+    renderLayersPanel();
+    pushHistory();
+  }
+}
+function duplicateLayer(id){
+  const l = layers.find(x=>x.id===id);
+  if(!l) return;
+  const copy = makeCanvas(width,height);
+  const ctx = copy.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(l.canvas,0,0);
+  canvasArea.appendChild(copy);
+  const idn = Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const newLayer = {id:idn,canvas:copy,ctx,name:l.name+' copy',visible:l.visible,opacity:l.opacity,locked:l.locked};
+  layers.push(newLayer);
+  setActiveLayer(newLayer.id);
+  renderLayersPanel();
+  pushHistory();
+}
+function mergeDown(id){
+  const i = layers.findIndex(l=>l.id===id);
+  if(i>0){
+    const top = layers[i];
+    const below = layers[i-1];
+    below.ctx.globalAlpha = top.opacity;
+    below.ctx.drawImage(top.canvas,0,0);
+    canvasArea.removeChild(top.canvas);
+    layers.splice(i,1);
+    setActiveLayer(below.id);
+    renderLayersPanel();
+    pushHistory();
+  }
+}
+function setActiveLayer(id){
+  activeLayer = layers.find(l=>l.id===id) || layers[0];
+  // visual cue: border
+  layers.forEach(l=> l.canvas.style.outline = (l.id===activeLayer.id) ? '2px solid rgba(255,255,255,0.08)' : 'none');
+}
+
+function renderLayersPanel(){
+  const el = $('#layers'); el.innerHTML='';
+  for(let i=layers.length-1;i>=0;i--){ // show top first
+    const l = layers[i];
+    const item = document.createElement('div'); item.className='layer-item';
+    const left = document.createElement('div'); left.style.display='flex';left.style.alignItems='center';left.style.gap='6px';
+    const vis = document.createElement('button'); vis.className='icon-btn'; vis.textContent = l.visible ? '👁' : '🚫';
+    vis.title='Toggle visible'; vis.onclick = ()=>{ l.visible = !l.visible; l.canvas.style.display = l.visible ? 'block' : 'none'; renderLayersPanel(); pushHistory(); };
+    const name = document.createElement('div'); name.className='layer-name'; name.textContent = l.name;
+    name.onclick = ()=>{ setActiveLayer(l.id); renderLayersPanel(); };
+    left.appendChild(vis); left.appendChild(name);
+    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
+    const dup = document.createElement('button'); dup.className='icon-btn'; dup.textContent='⎘'; dup.title='Duplicate'; dup.onclick=()=>duplicateLayer(l.id);
+    const del = document.createElement('button'); del.className='icon-btn'; del.textContent='✕'; del.title='Delete'; del.onclick=()=>{ if(confirm('Hapus layer?')) removeLayer(l.id); };
+    const op = document.createElement('input'); op.type='range'; op.min=0;op.max=100;op.value = Math.round(l.opacity*100);
+    op.title='Opacity'; op.oninput = (e)=>{ l.opacity = e.target.value/100; l.canvas.style.opacity = l.opacity; pushHistoryDebounced(); };
+    right.appendChild(dup); right.appendChild(del); right.appendChild(op);
+    item.appendChild(left); item.appendChild(right);
+    if(l.id===activeLayer.id) item.style.background = 'linear-gradient(90deg, rgba(255,255,255,0.02), transparent)';
+    el.appendChild(item);
+  }
+}
+
+// ---------- Merge & History ----------
+function mergeAllToCanvas(targetCanvas){
+  const ctx = targetCanvas.getContext('2d');
+  ctx.clearRect(0,0,targetCanvas.width,targetCanvas.height);
+  // draw in layer order
+  for(let i=0;i<layers.length;i++){
+    const l = layers[i];
+    if(!l.visible) continue;
+    ctx.globalAlpha = l.opacity;
+    ctx.drawImage(l.canvas,0,0);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function pushHistory(){
+  // store merged snapshot
+  mergeCanvas.width = width; mergeCanvas.height = height;
+  mergeAllToCanvas(mergeCanvas);
+  const data = mergeCanvas.toDataURL('image/png');
+  // trim forward history if needed
+  if(historyIndex < history.length-1) history = history.slice(0, historyIndex+1);
+  history.push(data);
+  historyIndex = history.length-1;
+  if(history.length > maxHistory) { history.shift(); historyIndex = history.length-1; }
+  updateUndoRedoButtons();
+}
+let pushHistoryTimer=null;
+function pushHistoryDebounced(){
+  if(pushHistoryTimer) clearTimeout(pushHistoryTimer);
+  pushHistoryTimer = setTimeout(()=>{ pushHistory(); pushHistoryTimer = null; }, 550);
+}
+function undo(){
+  if(historyIndex>0){
+    historyIndex--;
+    restoreFromHistory(history[historyIndex]);
+    updateUndoRedoButtons();
+  }
+}
+function redo(){
+  if(historyIndex < history.length-1){
+    historyIndex++;
+    restoreFromHistory(history[historyIndex]);
+    updateUndoRedoButtons();
+  }
+}
+function restoreFromHistory(dataUrl){
+  const img = new Image();
+  img.onload = ()=>{
+    // clear all layers then draw image across a base layer (layer0)
+    // If there are multiple layers, we'll reset the bottom layer with image and clear above layers.
+    layers.forEach((l,idx)=>{
+      l.ctx.clearRect(0,0,l.canvas.width,l.canvas.height);
+    });
+    // draw merged snapshot into bottom-most layer (create one if none)
+    if(layers.length===0) createLayer('Layer');
+    layers[0].ctx.drawImage(img,0,0);
+    pushHistoryDebounced();
+    renderLayersPanel();
+  };
+  img.src = dataUrl;
+}
+function updateUndoRedoButtons(){
+  $('#undo').disabled = historyIndex <= 0;
+  $('#redo').disabled = historyIndex >= history.length-1;
+}
+
+// ---------- Tools ----------
+function setTool(t){
+  tool = t;
+  // visual highlight on toolbar
+  $$('#toolbar button').forEach(b=> b.style.borderColor = (b.dataset.tool === tool) ? 'var(--accent)' : 'transparent');
+}
+
+function getPointerPos(evt){
+  const rect = canvasArea.getBoundingClientRect();
+  const x = Math.round((evt.clientX - rect.left) * (width / rect.width));
+  const y = Math.round((evt.clientY - rect.top) * (height / rect.height));
+  return {x,y};
+}
+
+function drawLine(ctx, p1, p2, w, col, op){
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalAlpha = op;
+  ctx.strokeStyle = col;
+  ctx.lineWidth = w;
+  ctx.beginPath();
+  ctx.moveTo(p1.x+0.5, p1.y+0.5);
+  ctx.lineTo(p2.x+0.5, p2.y+0.5);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawStroke(ctx, points, w, col, op){
+  if(points.length<2) return;
+  ctx.save(); ctx.globalAlpha = op; ctx.lineWidth = w; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=col;
+  ctx.beginPath(); ctx.moveTo(points[0].x+0.5, points[0].y+0.5);
+  for(let i=1;i<points.length;i++){
+    ctx.lineTo(points[i].x+0.5, points[i].y+0.5);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+// Flood fill (stack-based) - operate on a particular layer ctx
+function floodFill(ctx, x, y, fillColor){
+  const w = ctx.canvas.width, h = ctx.canvas.height;
+  const img = ctx.getImageData(0,0,w,h);
+  const data = img.data;
+  const idx = (y*w + x) * 4;
+  const targetR = data[idx], targetG = data[idx+1], targetB = data[idx+2], targetA = data[idx+3];
+  const [fr,fg,fb,fa] = hexToRgba(fillColor);
+  if(targetR === fr && targetG === fg && targetB === fb && targetA === fa) return;
+  const stack = [[x,y]];
+  while(stack.length){
+    const [cx,cy] = stack.pop();
+    let i = (cy*w + cx) *4;
+    if(cx<0||cx>=w||cy<0||cy>=h) continue;
+    if(data[i]===targetR && data[i+1]===targetG && data[i+2]===targetB && data[i+3]===targetA){
+      data[i]=fr; data[i+1]=fg; data[i+2]=fb; data[i+3]=fa;
+      stack.push([cx+1,cy]); stack.push([cx-1,cy]); stack.push([cx,cy+1]); stack.push([cx,cy-1]);
     }
+  }
+  ctx.putImageData(img,0,0);
+}
+function hexToRgba(hex){
+  if(hex.startsWith('#')) hex = hex.slice(1);
+  if(hex.length===3) hex = hex.split('').map(s=>s+s).join('');
+  const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+  return [r,g,b,255];
+}
+
+// Selection: rectangular copy and remove from layer, create ghost
+function startSelection(x,y){
+  selection = {x,y,w:0,h:0,imageData:null,ghost:null,originX:x,originY:y};
+  selection.ghost = document.createElement('div'); selection.ghost.className='selection-ghost';
+  canvasArea.appendChild(selection.ghost);
+}
+function updateSelectionRect(x,y){
+  if(!selection) return;
+  selection.x = Math.min(x, selection.originX); selection.y = Math.min(y, selection.originY);
+  selection.w = Math.abs(x - selection.originX); selection.h = Math.abs(y - selection.originY);
+  selection.ghost.style.left = (selection.x/width*100) + '%';
+  selection.ghost.style.top = (selection.y/height*100) + '%';
+  selection.ghost.style.width = (selection.w/width*100) + '%';
+  selection.ghost.style.height = (selection.h/height*100) + '%';
+}
+function finalizeSelection(){
+  if(!selection) return;
+  const ctx = activeLayer.ctx;
+  if(selection.w<=0 || selection.h<=0){ selection.ghost.remove(); selection=null; return; }
+  // extract imageData and clear area
+  const img = ctx.getImageData(selection.x, selection.y, selection.w, selection.h);
+  ctx.clearRect(selection.x, selection.y, selection.w, selection.h);
+  selection.imageData = img;
+  selection.ghost.style.border = '2px dashed white';
+  // now allow user to move selection with Move tool (drag)
+}
+
+// Stamp: when stampImage set, clicking will draw that image centered
+function stampAt(x,y){
+  if(!stampImage) return;
+  const ctx = activeLayer.ctx;
+  const w = stampImage.width, h = stampImage.height;
+  const scaled = Math.max(32, size*8); // user size drives stamp scale approximated
+  const aspect = w/h;
+  const dw = scaled; const dh = Math.round(scaled/aspect);
+  ctx.globalAlpha = opacity;
+  ctx.drawImage(stampImage, x - Math.round(dw/2), y - Math.round(dh/2), dw, dh);
+  ctx.globalAlpha = 1;
+}
+
+// ---------- Events ----------
+function pointerDown(ev){
+  ev.preventDefault();
+  if(!activeLayer) return;
+  const pos = getPointerPos(ev);
+  isDrawing = true; startPoint = pos; lastPoint = pos;
+  if(tool === 'brush' || tool === 'eraser'){
+    // start stroke buffer
+    activeLayer._points = [pos];
+  } else if(tool === 'line' || tool === 'rect' || tool === 'ellipse'){
+    // nothing, wait for pointermove to preview
+  } else if(tool === 'fill'){
+    // flood fill on active layer
+    const ctx = activeLayer.ctx;
+    const fillColor = (tool==='eraser') ? '#00000000' : color;
+    floodFill(ctx, pos.x, pos.y, color);
+    pushHistoryDebounced();
+  } else if(tool === 'text'){
+    // place text input
+    placeTextAt(pos.x,pos.y);
+  } else if(tool === 'select'){
+    startSelection(pos.x,pos.y);
+  } else if(tool === 'stamp'){
+    stampAt(pos.x,pos.y); pushHistoryDebounced();
+  } else if(tool === 'eyedrop'){
+    const d = activeLayer.ctx.getImageData(pos.x,pos.y,1,1).data;
+    const col = rgbToHex(d[0],d[1],d[2]);
+    $('#color').value = col; color = col;
+  }
+}
+function pointerMove(ev){
+  if(!isDrawing) return;
+  ev.preventDefault();
+  const pos = getPointerPos(ev);
+  if(tool === 'brush' || tool === 'eraser'){
+    activeLayer._points.push(pos);
+    // draw smoothing
+    const ctx = activeLayer.ctx;
+    if(tool==='eraser'){
+      ctx.globalCompositeOperation = 'destination-out';
+      drawStroke(ctx, activeLayer._points.slice(-4), size, 'rgba(0,0,0,1)', 1);
+      ctx.globalCompositeOperation = 'source-over';
+    } else {
+      drawStroke(ctx, activeLayer._points.slice(-4), size, color, opacity);
+    }
+  } else if(tool === 'line' || tool === 'rect' || tool === 'ellipse'){
+    // preview: we'll draw on overlay temp canvas
+    drawPreview(shapePreview, startPoint, pos, tool);
+  } else if(tool === 'select'){
+    updateSelectionRect(pos.x,pos.y);
+  } else if(tool==='move' && selection && selection.imageData){
+    // Move selection by dragging — simple: re-render ghost position visually
+    // Compute offset from origin
+    const dx = pos.x - selection.originX, dy = pos.y - selection.originY;
+    selection.ghost.style.left = ((selection.x+dx)/width*100)+'%';
+    selection.ghost.style.top = ((selection.y+dy)/height*100)+'%';
+  }
+  lastPoint = pos;
+}
+function pointerUp(ev){
+  if(!isDrawing) return;
+  const pos = getPointerPos(ev);
+  if(tool === 'brush' || tool === 'eraser'){
+    // finalize stroke
+    if(tool==='eraser') {
+      activeLayer.ctx.globalCompositeOperation = 'destination-out';
+      drawStroke(activeLayer.ctx, activeLayer._points, size, 'rgba(0,0,0,1)', 1);
+      activeLayer.ctx.globalCompositeOperation = 'source-over';
+    } else {
+      drawStroke(activeLayer.ctx, activeLayer._points, size, color, opacity);
+    }
+    activeLayer._points = [];
+    pushHistoryDebounced();
+  } else if(tool === 'line' || tool === 'rect' || tool === 'ellipse'){
+    drawPreview(shapePreview, startPoint, pos, tool, true);
+    clearPreview();
+    pushHistoryDebounced();
+  } else if(tool === 'select'){
+    finalizeSelection();
+    pushHistoryDebounced();
+  } else if(tool==='move' && selection && selection.imageData){
+    // compute final offset, paste selection to active layer
+    // derive offset based on ghost's visual position
+    const rect = selection.ghost.getBoundingClientRect();
+    const rectWrap = canvasArea.getBoundingClientRect();
+    const newX = Math.round((rect.left - rectWrap.left) * (width / rectWrap.width));
+    const newY = Math.round((rect.top - rectWrap.top) * (height / rectWrap.height));
+    activeLayer.ctx.putImageData(selection.imageData, newX, newY);
+    selection.ghost.remove(); selection = null;
+    pushHistoryDebounced();
+  }
+  isDrawing = false;
+}
+
+// ---------- Preview canvas for shapes ----------
+const shapePreview = (() => {
+  const cv = document.createElement('canvas'); cv.className='layer-canvas'; cv.style.zIndex = 9999; cv.style.pointerEvents='none';
+  cv.width = width; cv.height = height; cv.style.opacity = 1; canvasArea.appendChild(cv);
+  return cv;
+})();
+
+function drawPreview(previewCanvas, p1, p2, toolName, commit=false){
+  const ctx = previewCanvas.getContext('2d');
+  ctx.clearRect(0,0,previewCanvas.width,previewCanvas.height);
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = size; ctx.globalAlpha = opacity; ctx.lineJoin='round'; ctx.lineCap='round';
+  if(toolName==='line'){
+    ctx.beginPath(); ctx.moveTo(p1.x+0.5,p1.y+0.5); ctx.lineTo(p2.x+0.5,p2.y+0.5); ctx.stroke();
+    if(commit){ activeLayer.ctx.drawImage(previewCanvas,0,0); ctx.clearRect(0,0,previewCanvas.width,previewCanvas.height); }
+  } else if(toolName==='rect'){
+    const rx = Math.min(p1.x,p2.x), ry = Math.min(p1.y,p2.y), rw = Math.abs(p2.x-p1.x), rh = Math.abs(p2.y-p1.y);
+    ctx.strokeRect(rx+0.5,ry+0.5,rw,rh);
+    if(commit){ activeLayer.ctx.drawImage(previewCanvas,0,0); ctx.clearRect(0,0,previewCanvas.width,previewCanvas.height); }
+  } else if(toolName==='ellipse'){
+    const cx = (p1.x+p2.x)/2, cy=(p1.y+p2.y)/2, rx = Math.abs(p2.x-p1.x)/2, ry = Math.abs(p2.y-p1.y)/2;
+    ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+    if(commit){ activeLayer.ctx.drawImage(previewCanvas,0,0); ctx.clearRect(0,0,previewCanvas.width,previewCanvas.height); }
+  }
+  ctx.restore();
+}
+function clearPreview(){ const ctx = shapePreview.getContext('2d'); ctx.clearRect(0,0,shapePreview.width,shapePreview.height); }
+
+// ---------- Text placement ----------
+function placeTextAt(x,y){
+  const input = document.createElement('input');
+  input.style.position='absolute';
+  input.style.left = (x/width*100) + '%';
+  input.style.top = (y/height*100) + '%';
+  input.style.background='transparent'; input.style.border='1px solid rgba(255,255,255,0.12)';
+  input.style.color='white'; input.style.font='20px sans-serif'; input.style.padding='4px';
+  canvasArea.appendChild(input);
+  input.focus();
+  input.onkeydown = (e)=>{
+    if(e.key === 'Enter'){ commitText(input, x, y); }
+    if(e.key === 'Escape'){ input.remove(); }
+  };
+  input.onblur = ()=>{ commitText(input,x,y); };
+}
+function commitText(input,x,y){
+  const txt = input.value;
+  if(txt && txt.trim().length){
+    const ctx = activeLayer.ctx;
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = opacity;
+    ctx.font = Math.max(14, size*3) + 'px sans-serif';
+    ctx.fillText(txt, x, y + Math.max(14, size*3));
+    ctx.restore();
+    pushHistoryDebounced();
+  }
+  input.remove();
+}
+
+// ---------- Utility ----------
+function rgbToHex(r,g,b){ return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join(''); }
+
+// ---------- UI wiring ----------
+window.addEventListener('resize', ()=>{ ensureSize(); shapePreview.width = width; shapePreview.height = height; });
+ensureSize();
+
+// initial layer
+createLayer('Layer');
+
+// toolbar events
+$('#toolbar').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-tool]');
+  if(b){
+    setTool(b.dataset.tool);
+  }
+});
+$('#color').addEventListener('change', e=> color = e.target.value);
+$('#size').addEventListener('input', e=> size = parseInt(e.target.value));
+$('#opacity').addEventListener('input', e=> { opacity = e.target.value/100; });
+
+// layer buttons
+$('#addLayer').onclick = ()=> createLayer('Layer');
+$('#mergeDown').onclick = ()=> mergeDown(activeLayer.id);
+$('#clearLayer').onclick = ()=> { if(confirm('Kosongkan layer ini?')){ activeLayer.ctx.clearRect(0,0,activeLayer.canvas.width,activeLayer.canvas.height); pushHistoryDebounced(); } };
+$('#clearAll').onclick = ()=> { if(confirm('Kosongkan semua layer?')){ layers.forEach(l=>l.ctx.clearRect(0,0,l.canvas.width,l.canvas.height)); pushHistory(); } };
+
+// undo/redo
+$('#undo').onclick = ()=> undo();
+$('#redo').onclick = ()=> redo();
+
+// image upload (sticker)
+$('#imgUpload').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const img = new Image(); img.onload = ()=>{ stampImage = img; alert('Sticker loaded. Gunakan tool Stamp untuk menempel.'); };
+  img.src = URL.createObjectURL(f);
+  e.target.value = '';
+});
+
+// background import - draw into bottom layer as background
+$('#bgUpload').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const img = new Image(); img.onload = ()=>{
+    // ensure bottom layer exists
+    if(layers.length===0) createLayer('Layer');
+    const base = layers[0];
+    base.ctx.clearRect(0,0,base.canvas.width,base.canvas.height);
+    base.ctx.drawImage(img,0,0, base.canvas.width, base.canvas.height);
+    pushHistory();
+  };
+  img.src = URL.createObjectURL(f);
+  e.target.value = '';
+});
+
+// save merged
+$('#save').onclick = ()=>{
+  mergeCanvas.width = width; mergeCanvas.height = height;
+  mergeAllToCanvas(mergeCanvas);
+  const data = mergeCanvas.toDataURL('image/png');
+  downloadURI(data, 'drawing.png');
+};
+
+// export layers individually as ZIP-like (download multiple images sequentially)
+$('#exportLayers').onclick = ()=>{
+  layers.forEach((l,idx)=>{
+    const temp = document.createElement('canvas'); temp.width = l.canvas.width; temp.height = l.canvas.height;
+    const tctx = temp.getContext('2d'); tctx.globalAlpha = l.opacity; tctx.drawImage(l.canvas,0,0);
+    const d = temp.toDataURL('image/png');
+    downloadURI(d, `layer-${idx+1}-${l.name.replace(/\s+/g,'_')}.png`);
+  });
+};
+
+// selection & move - tool binding guaranteed by pointer events
+
+// pointer events (use pointer to unify mouse/touch/stylus)
+canvasArea.style.touchAction = 'none';
+canvasArea.addEventListener('pointerdown', e => {
+  // pick topmost visible layer under pointer as active if clicking and not on UI
+  // find top-most layer under the pointer
+  const rect = canvasArea.getBoundingClientRect();
+  const px = Math.round((e.clientX - rect.left) * (width / rect.width));
+  const py = Math.round((e.clientY - rect.top) * (height / rect.height));
+  // choose active layer (already set via panel); do pointer handling
+  pointerDown(e);
+});
+window.addEventListener('pointermove', e => pointerMove(e));
+window.addEventListener('pointerup', e => pointerUp(e));
+
+// Prevent two-finger scroll interfering in mobile when drawing: allow normal browser gestures; we only prevent default on pointer events when drawing.
+
+// Initialize undo history
+pushHistory();
+
+// small helpers for keyboard (desktop)
+window.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key === 'z') { undo(); e.preventDefault(); }
+  if((e.ctrlKey||e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { redo(); e.preventDefault(); }
+});
+
+// Quick save on page hide to avoid lost work (localStorage)
+window.addEventListener('beforeunload', ()=>{ try{ mergeCanvas.width = width; mergeAllToCanvas(mergeCanvas); localStorage.setItem('autosave', mergeCanvas.toDataURL('image/png')); }catch(e){} });
+
+// load autosave if exists
+(function tryLoadAuto(){
+  const d = localStorage.getItem('autosave');
+  if(d){
+    const img = new Image(); img.onload=()=>{ layers[0].ctx.drawImage(img,0,0); pushHistory(); };
+    img.src = d;
+  }
+})();
+
+</script>
+</body>
+</html>    }
 
     header {
       background: #007bff;
