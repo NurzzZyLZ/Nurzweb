@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NZweb - Violet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #2e1a4a;
+            color: #f0e6ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background-color: #4b2e6e;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .hamburger {
+            font-size: 2rem;
+            cursor: pointer;
+            user-select: none;
+            color: #f0e6ff;
+            background: none;
+            border: none;
+            width: 40px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .hamburger:hover {
+            transform: scale(1.1);
+            color: #d9b3ff;
+        }
+
+        .site-title {
+            flex: 1;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #f0e6ff;
+            text-shadow: 2px 2px 4px #1a0e2e;
+        }
+
+        /* Menu dropdown */
+        .nav-menu {
+            background-color: #3c2358;
+            width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border-top: 1px solid #6b4f8c;
+        }
+
+        .nav-menu.show {
+            display: flex;
+        }
+
+        .nav-menu a {
+            background-color: #5b3e7a;
+            color: #f0e6ff;
+            text-decoration: none;
+            font-size: 1.3rem;
+            padding: 0.8rem 2rem;
+            margin: 0.3rem 0;
+            width: 200px;
+            text-align: center;
+            border-radius: 30px;
+            border: 2px solid #8a6ab3;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-menu a:hover {
+            background-color: #7a5aa3;
+            border-color: #c3a5f0;
+            transform: scale(1.05);
+            box-shadow: 0 0 10px #b38fdd;
+        }
+
+        /* Main content */
+        main {
+            flex: 1;
+            padding: 2rem;
+        }
+
+        /* Hero section */
+        .hero {
+            background-color: rgba(75, 46, 110, 0.7);
+            backdrop-filter: blur(4px);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 2px solid #8a6ab3;
+            box-shadow: 0 0 30px #6b4f8c;
+            max-width: 900px;
+            margin: 0 auto 3rem auto;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 0.5rem;
+            color: #e6ccff;
+            text-shadow: 3px 3px 6px #1a0e2e;
+        }
+
+        .divider {
+            width: 80%;
+            margin: 1rem auto;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c3a5f0, transparent);
+            border: none;
+        }
+
+        .hero .description {
+            font-size: 1.3rem;
+            color: #d9c2f0;
+            max-width: 600px;
+            margin: 1rem auto;
+        }
+
+        /* Features section */
+        .features {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .features h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #e6ccff;
+            text-shadow: 2px 2px 4px #1a0e2e;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+
+        .feature-card {
+            display: block; /* Membuat link berperilaku seperti block */
+            background-color: rgba(75, 46, 110, 0.6);
+            backdrop-filter: blur(2px);
+            border: 2px solid #8a6ab3;
+            border-radius: 20px;
+            padding: 2rem 1rem;
+            transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 25px #b38fdd;
+            background-color: rgba(95, 66, 130, 0.8);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #f0e6ff;
+        }
+
+        .feature-card p {
+            color: #d9c2f0;
+            line-height: 1.6;
+        }
+
+        footer {
+            background-color: #1f1235;
+            text-align: center;
+            padding: 1rem;
+            font-size: 1rem;
+            color: #a98ed1;
+            border-top: 1px solid #5b3e7a;
+            margin-top: 2rem;
+        }
+
+        .credit {
+            font-style: italic;
+            margin-top: 0.3rem;
+            color: #c3a5f0;
+        }
+
+        /* Responsif */
+        @media (max-width: 600px) {
+            header {
+                padding: 1rem;
+            }
+            .site-title {
+                font-size: 1.5rem;
+            }
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+            .hero .description {
+                font-size: 1.1rem;
+            }
+            .features h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">☰</button>
+        <div class="site-title">NZweb</div>
+    </header>
+
+    <!-- Menu 5 tombol -->
+    <nav class="nav-menu" id="navMenu">
+        <a href="#">Beranda</a>
+        <a href="tentang.html">Tentang</a>
+        <a href="tujuan.html">tujuan</a>
+        <a href=""Fitur Utama""">fitur</a>
+        <a href="#">Kontak</a>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <h1>NZweb</h1>
+            <hr class="divider">
+            <p class="description">Website dengan dominasi warna violet yang elegan dan misterius. Klik tombol menu di pojok kiri atas untuk menjelajahi halaman lainnya.</p>
+        </section>
+
+        <section class="features">
+            <h2>Fitur Utama</h2>
+            <div class="feature-grid">
+                <a href="ai.html" class="feature-card">
+                    <div class="feature-icon">🤖</div>
+                    <h3>AI pendamping</h3>
+                    <p>Ai untuk menemanimu yang jomblo:3</p>
+                </a>
+                <a href="reactCH.html" class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>ReactCH Whatsapp</h3>
+                    <p>untuk memberikan 1k reaksi custom di post ch(sedang error).</p>
+                </a>
+                <a href="fitur-kecepatan.html" class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>coming soon</h3>
+                    <p>coming soon</p>
+                </a>
+                <a href="fitur-kelola.html" class="feature-card">
+                    <div class="feature-icon">🔧</div>
+                    <h3>coming soon</h3>
+                    <p>coming soon.</p>
+                </a>
+                <a href="fitur-interaktif.html" class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>coming soon</h3>
+                    <p>coming soon.</p>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div>&copy; 2026 NZweb</div>
+        <div class="credit">by @Nurz</div>
+    </footer>
+
+    <script>
+        const hamburger = document.getElementById('hamburgerBtn');
+        const navMenu = document.getElementById('navMenu');
+
+        hamburger.addEventListener('click', function() {
+            navMenu.classList.toggle('show');
+        });
+
+        // Tutup menu saat klik di luar
+        document.addEventListener('click', function(event) {
+            if (!hamburger.contains(event.target) && !navMenu.contains(event.target)) {
+                navMenu.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
